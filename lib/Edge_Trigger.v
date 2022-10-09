@@ -1,6 +1,6 @@
 module Edge_Trigger (
     input clk, rst, in,
-    output out
+    output wire out
 );
     reg [1:0] state;
 
