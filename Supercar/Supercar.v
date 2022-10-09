@@ -3,7 +3,6 @@
 `include "../lib/Edge_Trigger.v"
 `include "../lib/Prescaler.v"
 `include "../lib/TFF.v"
-`include "../lib/UDL_CNT.v"
 `include "../lib/CNT.v"
 
 module Supercar (
@@ -49,13 +48,13 @@ module Supercar (
     genvar hex;
     generate
         for (hex = 0; hex<4; hex = hex+1) begin : Gen_BCD_7Seg
-            BCD_7Seg B_7 (.A(BCD_in[4*hex+3:4*hex]),.HEX0(BCD_out[7*hex+6:7*hex]));
+            BCD_7Seg B_7 (.A(BCD_in[4*hex+3:4*hex]),.HEX0(BCD_out[7*hex+6:7*hex])); //Output pilotato in ipotesi di 7 segment active low, si può gestire con relativo parametro
         end
     endgenerate
 
     assign HEX_in = SEG_AL ? BCD_out : ~BCD_out;
-    assign HEX0 = reset ? HEX_in[3:0] : 7'd0;
-    assign HEX1 = HEX_in[7:4];
-    assign HEX2 = HEX_in[11:8];
-    assign HEX3 = HEX_in[15:12];
+    assign HEX0 = reset ? HEX_in[6:0] : 7'd0;
+    assign HEX1 = HEX_in[13:7];
+    assign HEX2 = HEX_in[20:14];
+    assign HEX3 = HEX_in[27:21];
 endmodule
