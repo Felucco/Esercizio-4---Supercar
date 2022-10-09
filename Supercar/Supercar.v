@@ -16,12 +16,20 @@ module Supercar (
 );
 
     parameter SEG_AL=1; //Mettere a 0 se i 7 segmenti vanno pilotati in active high e non active low
+    parameter REAL_CLOCK = 1000;
 
-    wire reset, mode1, mode2, mode3;
+    wire reset, mode1, mode2;
+    reg mode3;
     assign reset=~KEY[0];
     assign mode1=~KEY[1];
     assign mode2=~KEY[2];
-    assign mode3=~KEY[3];
+
+    always @(posedge CLOCK_50 or posedge reset) begin
+        if (reset) mode3<=0;
+        else mode3<=~KEY[3];
+    end
+
+    // ---------- Controllo contatori H0...H3 e comando 7 segmenti -------------------
 
     wire mode1_et, mode2_et;
 
@@ -57,4 +65,35 @@ module Supercar (
     assign HEX1 = HEX_in[13:7];
     assign HEX2 = HEX_in[20:14];
     assign HEX3 = HEX_in[27:21];
+
+    // ------------------ Fine comando 7 segmenti
+
+    // ------------------ Mode3 = 1 -> Bouncing logic -------------
+
+    wire pre100_p_e;
+
+    Prescaler #(.PERIOD(REAL_CLOCK/100)) Pre100 (.clk(CLOCK_50),.rst(reset),.en(mode3),.p_e(pre100_p_e));
+
+    wire b_shr_sin;
+    wire [9:0] b_shr_pout;
+    Edge_Trigger Mode3_ET (.clk(CLOCK_50),.rst(reset),.in(~KEY[3]),.out(b_shr_sin)); //Si può sfruttare direttamente l'ingresso non campionato dato che ET campiona internamente
+
+    Bouncing_SHR #(.N_BIT(10)) B_SHR (.clk(CLOCK_50),.rst(reset),.en(pre100_p_e),.sin(b_shr_sin),.pout(b_shr_pout));
+
+    // --------------- Mode3 = 0 -> Led lampeggianti ---------------
+    wire pre2_p_e;
+
+    Prescaler #(.PERIOD(REAL_CLOCK/2)) Pre2 (.clk(CLOCK_50),.rst(reset),.en(~mode3),.p_e(pre2_p_e));
+
+    wire [9:0] tff_out;
+
+    genvar t_idx;
+    generate
+        for (t_idx = 0; t_idx<10; t_idx=t_idx+1) begin : T_FF_Generate
+            TFF T_FF (.clk(CLOCK_50),.rst(reset),.t(pre2_p_e),.q(tff_out[t_idx]));
+        end
+    endgenerate
+
+    // -------------- Mode3 output selection --------------
+    assign LEDR = mode3 ? b_shr_pout : tff_out;
 endmodule
