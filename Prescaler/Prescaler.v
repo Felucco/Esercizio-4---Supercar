@@ -17,7 +17,7 @@ module Prescaler #(
 
     UDL_CNT #(.N_BIT(N_BIT)) CNT (.clk(clk),.rst(rst),.en(en),.d_nu(1'b0),.pl(equal_period),.pin(pin_0),.cnt(cnt_out));
 
-    assign equal_period = (cnt_out==PERIOD) ? 1'b1 : 1'b0;
+    assign equal_period = (cnt_out==PERIOD-1) ? 1'b1 : 1'b0;
 
     assign p_e = equal_period;
     
